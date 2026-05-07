@@ -59,6 +59,10 @@ protected:
 	void StopFire(const FInputActionValue& value);
 	UFUNCTION()
 	void Reload(const FInputActionValue& value);
+	UFUNCTION()
+	void StartAim(const FInputActionValue& value);
+	UFUNCTION()
+	void StopAim(const FInputActionValue& value);
 			
 	void OnDeath();
 
@@ -88,6 +92,13 @@ private:
 	float RecoilYawRemaining; 
 	float RecoilRecoverySpeed;   // 복귀 속도
 	bool bIsRecoiling; 
+	
+	float DefaultArmLength;		// 기본 카메라 거리
+	float AimArmLength;			// 조준 시 카메라 거리
+	float AimInterpSpeed;		// 보간 속도
+	bool bIsAiming;				// 조준 중 여부
+	float DefaultFOV;			// 기본 카메라 시야각
+	float AimFOV;				// 조준 시 카메라 시야각
 	
 };
 

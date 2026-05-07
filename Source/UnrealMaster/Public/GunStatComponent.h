@@ -25,7 +25,7 @@ public:
 
 	// 한 번 발사 시 나가는 총알 수
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 BulletsPerShot;
+	int32 BulletsPerFire;
 
 	// 총알이 퍼지는 각도 (권총/저격 = 0, 샷건 = 45)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

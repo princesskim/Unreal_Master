@@ -20,6 +20,23 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 AUnrealMasterCharacter::AUnrealMasterCharacter()
 {
+	
+	NormalSpeed = 500.0f;
+	SprintSpeedMultiplier = 2.f;
+	SprintSpeed = NormalSpeed * SprintSpeedMultiplier;
+	
+	RecoilPitchRemaining = 0.f;
+	RecoilYawRemaining = 0.f;
+	RecoilRecoverySpeed = 15.f; 
+	bIsRecoiling = false;
+	
+	DefaultArmLength = 400.0f;
+	AimArmLength = 200.f;
+	AimInterpSpeed = 5.f;
+	bIsAiming = false;
+	DefaultFOV = 90.f;
+	AimFOV = 60.f;
+	
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
 	bUseControllerRotationPitch = false;
@@ -38,41 +55,54 @@ AUnrealMasterCharacter::AUnrealMasterCharacter()
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; 	
+	CameraBoom->TargetArmLength = DefaultArmLength;
 	CameraBoom->bUsePawnControlRotation = true; 
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); 
 	FollowCamera->bUsePawnControlRotation = false; 
-	
-	NormalSpeed = 500.0f;
-	SprintSpeedMultiplier = 2.f;
-	SprintSpeed = NormalSpeed * SprintSpeedMultiplier;
-	
-	RecoilPitchRemaining = 0.f;
-	RecoilYawRemaining = 0.f;
-	RecoilRecoverySpeed = 15.f; 
-	bIsRecoiling = false;
 }
 
 void AUnrealMasterCharacter::Tick(float DeltaSecond)
 {
 	Super::Tick(DeltaSecond);
 	
-	if (!bIsRecoiling) return;
+	// Aim 관련 보간
+	float CurrentArmLength = CameraBoom->TargetArmLength;
+	float CurrentFOV = FollowCamera->FieldOfView;
+
+	float TargetArmLength = bIsAiming? AimArmLength : DefaultArmLength;
+	float TargetFOV = bIsAiming? AimFOV : DefaultFOV;
+	CameraBoom->TargetArmLength = FMath::FInterpTo(
+		CurrentArmLength,
+		TargetArmLength,
+		DeltaSecond,
+		AimInterpSpeed
+	);
+	FollowCamera->FieldOfView = FMath::FInterpTo(
+		CurrentFOV,
+		TargetFOV,
+		DeltaSecond,
+		AimInterpSpeed
+	);
 	
-	float NewPitchRemaining = FMath::FInterpTo(RecoilPitchRemaining, 0.f, DeltaSecond, RecoilRecoverySpeed);
-	float NewYawRemaining = FMath::FInterpTo(RecoilYawRemaining, 0.f, DeltaSecond, RecoilRecoverySpeed);
 	
-	AddControllerPitchInput(-RecoilPitchRemaining + NewPitchRemaining);
-	AddControllerPitchInput(-RecoilYawRemaining + NewYawRemaining);
-	
-	RecoilPitchRemaining = NewPitchRemaining;
-	RecoilYawRemaining = NewYawRemaining;
-	
-	if (FMath::IsNearlyZero(RecoilPitchRemaining) && FMath::IsNearlyZero(RecoilYawRemaining))
+	// 카메라 피드백 관련 보간
+	if (bIsRecoiling)
 	{
-		bIsRecoiling = false;
+		float NewPitchRemaining = FMath::FInterpTo(RecoilPitchRemaining, 0.f, DeltaSecond, RecoilRecoverySpeed);
+		float NewYawRemaining = FMath::FInterpTo(RecoilYawRemaining, 0.f, DeltaSecond, RecoilRecoverySpeed);
+	
+		AddControllerPitchInput(-RecoilPitchRemaining + NewPitchRemaining);
+		AddControllerPitchInput(-RecoilYawRemaining + NewYawRemaining);
+	
+		RecoilPitchRemaining = NewPitchRemaining;
+		RecoilYawRemaining = NewYawRemaining;
+	
+		if (FMath::IsNearlyZero(RecoilPitchRemaining) && FMath::IsNearlyZero(RecoilYawRemaining))
+		{
+			bIsRecoiling = false;
+		}	
 	}
 }
 
@@ -184,6 +214,21 @@ void AUnrealMasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 					&AUnrealMasterCharacter::Reload	
 					);
 			}
+			if (PlayerController -> AimAction)
+			{
+				EnhancedInputComponent->BindAction( 
+					PlayerController->AimAction,	
+					ETriggerEvent::Triggered,	
+					this,							
+					&AUnrealMasterCharacter::StartAim	
+					);
+				EnhancedInputComponent->BindAction( 
+					PlayerController->AimAction,	 
+					ETriggerEvent::Completed,
+					this,							
+					&AUnrealMasterCharacter::StopAim	
+					);
+			}
 		}
 	}
 	else
@@ -199,6 +244,13 @@ void AUnrealMasterCharacter::SpawnSelectedGun()
 	if (!GunClassToSpawn) return;
 	
 	CurrentGun = World->SpawnActor<ABaseGun>(GunClassToSpawn);
+	
+	CurrentGun->AttachToComponent(
+		GetMesh(),
+		FAttachmentTransformRules::SnapToTargetIncludingScale,
+		TEXT("GunSocket")
+	); // hand_r 소켓에 붙여서, 손을 따라다니도록
+	
 }
 
 void AUnrealMasterCharacter::ApplyRecoil(float Pitch, float Yaw)
@@ -299,6 +351,16 @@ void AUnrealMasterCharacter::Reload(const FInputActionValue& value)
 	{
 		CurrentGun->Reload();
 	}
+}
+
+void AUnrealMasterCharacter::StartAim(const FInputActionValue& value)
+{
+	bIsAiming = true;
+}
+
+void AUnrealMasterCharacter::StopAim(const FInputActionValue& value)
+{
+	bIsAiming = false;
 }
 
 void AUnrealMasterCharacter::OnDeath()

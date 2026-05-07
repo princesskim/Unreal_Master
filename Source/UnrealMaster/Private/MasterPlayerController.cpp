@@ -10,7 +10,8 @@ AMasterPlayerController::AMasterPlayerController()
 	LookAction(nullptr), 
 	SprintAction(nullptr),
 	FireAction(nullptr),
-	ReloadAction(nullptr)
+	ReloadAction(nullptr),
+	AimAction(nullptr)
 {
 }
 
