@@ -15,6 +15,7 @@
 #include "MasterPlayerController.h"
 #include "BaseGun.h"
 #include "GunStatComponent.h"
+#include "MyActorComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -30,8 +31,8 @@ AUnrealMasterCharacter::AUnrealMasterCharacter()
 	RecoilRecoverySpeed = 15.f; 
 	bIsRecoiling = false;
 	
-	DefaultArmLength = 400.0f;
-	AimArmLength = 200.f;
+	DefaultArmLength = 200.0f;
+	AimArmLength = 50.f;
 	AimInterpSpeed = 5.f;
 	bIsAiming = false;
 	DefaultFOV = 90.f;
@@ -61,6 +62,8 @@ AUnrealMasterCharacter::AUnrealMasterCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); 
 	FollowCamera->bUsePawnControlRotation = false; 
+	
+	HealthComponent = CreateDefaultSubobject<UMyActorComponent>(TEXT("HealthComponent"));
 }
 
 void AUnrealMasterCharacter::Tick(float DeltaSecond)
@@ -106,7 +109,7 @@ void AUnrealMasterCharacter::Tick(float DeltaSecond)
 	}
 }
 
-float AUnrealMasterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+/*float AUnrealMasterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
@@ -125,11 +128,16 @@ float AUnrealMasterCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 	//CurrentHP -= ActualDamage; //변수 없음
 	return ActualDamage;
-}
+}*/
 
 void AUnrealMasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if (HealthComponent)
+	{
+		HealthComponent->OnHealthDead.AddUniqueDynamic(this, &AUnrealMasterCharacter::OnDeath);
+	}
 	
 	SpawnSelectedGun();
 }
@@ -363,7 +371,20 @@ void AUnrealMasterCharacter::StopAim(const FInputActionValue& value)
 	bIsAiming = false;
 }
 
-void AUnrealMasterCharacter::OnDeath()
+void AUnrealMasterCharacter::OnDeath(AController* DeathInstigator)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Player Dead"));
+	
+	// 캐릭터 이동 기능 비활성화
+	GetCharacterMovement()->DisableMovement();
+	
+	// 살아있을 때는 Capsule이 충돌을 담당, 레그돌 상태에서는 Mesh가 충돌을 담당
+	// 캡슐 충돌 비활성화
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	// 레그돌용 충돌 프로파일로 변경
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	// Skeletal Mesh의 물리 시뮬레이션 활성화
+	GetMesh()->SetSimulatePhysics(true);
+	
 }
 

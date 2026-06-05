@@ -37,9 +37,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual bool Fire();
 	
-	UFUNCTION(BlueprintNativeEvent)
-	bool SandboxFire();							// 위임하는 함수 만들기
-												// 구현부 만들면 안 됨
+	UFUNCTION(BlueprintNativeEvent)				// BlueprintNativeEvent
+	bool SandboxFire();							// 하이브리드 함수 만들기
+												// (cpp) — 반드시 _Implementation 접미사
 	
 	UFUNCTION(BlueprintCallable)
 	virtual void Reload();

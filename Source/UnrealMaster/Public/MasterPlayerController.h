@@ -9,6 +9,7 @@
 class ABaseGun;
 class UInputMappingContext;
 class UInputAction;
+class UPlayerStatusWidget;
 
 UCLASS()
 class UNREALMASTER_API AMasterPlayerController : public APlayerController
@@ -38,6 +39,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	ABaseGun* CurrentGun;
 	
+	UPROPERTY(EditAnywhere, Category = "Widget")
+	TSubclassOf<UPlayerStatusWidget> PlayerStatusWidgetClass;
+	
 protected:
 	virtual void BeginPlay() override;
+	
+	UPROPERTY()
+	TObjectPtr<UPlayerStatusWidget> PlayerStatusWidget;
 };

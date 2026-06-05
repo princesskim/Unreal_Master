@@ -2,6 +2,8 @@
 
 #include "MasterPlayerController.h"
 #include "EnhancedInputSubsystems.h"
+#include "PlayerStatusWidget.h"
+#include "UnrealMasterCharacter.h"
 
 AMasterPlayerController::AMasterPlayerController()
 	: InputMappingContext(nullptr),
@@ -29,6 +31,25 @@ void AMasterPlayerController::BeginPlay()
 				SubSystem->AddMappingContext(InputMappingContext, 0);
 			}
 			
+		}
+	}
+	
+	if (PlayerStatusWidgetClass)
+	{
+		PlayerStatusWidget = CreateWidget<UPlayerStatusWidget>(this, PlayerStatusWidgetClass);
+		if (PlayerStatusWidget)
+		{
+			PlayerStatusWidget->AddToViewport();
+			
+			APawn* MyPawn = GetPawn();
+			if (MyPawn)
+			{
+				AUnrealMasterCharacter* UnrealMasterCharacter = Cast<AUnrealMasterCharacter>(MyPawn);
+				if (UnrealMasterCharacter)
+				{
+					PlayerStatusWidget->SetHealthComp(UnrealMasterCharacter->GetHealthComponent());
+				}
+			}
 		}
 	}
 }

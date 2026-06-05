@@ -13,6 +13,7 @@ class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 class ABaseGun;
+class UMyActorComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -32,11 +33,12 @@ public:
 	
 	virtual void Tick(float DeltaSecond) override;
 	
-	virtual float TakeDamage(
-		float DamageAmount, 
-		struct FDamageEvent const& DamageEvent, 
-		class AController* EventInstigator, 
-		AActor* DamageCauser) override;
+	UFUNCTION(BlueprintPure)
+	UMyActorComponent* GetHealthComponent() const {return HealthComponent;}
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UMyActorComponent> HealthComponent;
+	
 protected:
 	
 	virtual void BeginPlay() override;
@@ -63,8 +65,8 @@ protected:
 	void StartAim(const FInputActionValue& value);
 	UFUNCTION()
 	void StopAim(const FInputActionValue& value);
-			
-	void OnDeath();
+	UFUNCTION()
+	void OnDeath(AController* DeathInstigator);
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
