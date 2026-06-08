@@ -1,7 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "../Public/UnrealMasterGameMode.h"
-#include "../Public/UnrealMasterCharacter.h"
+#include "../Public/Character/UnrealMasterCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 
 AUnrealMasterGameMode::AUnrealMasterGameMode()
